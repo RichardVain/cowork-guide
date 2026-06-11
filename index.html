@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -111,6 +112,48 @@
       padding: 1px 5px;
       border-radius: 3px;
     }
+
+    .prompt-box {
+      background: #1A1210;
+      border: 1px solid #3D2E29;
+      border-radius: 8px;
+      padding: 10px 14px;
+      overflow-y: auto;
+      max-height: 160px;
+      flex: 0 0 auto;
+    }
+    .prompt-box .prompt-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--warm-grey);
+      margin-bottom: 4px;
+    }
+    .prompt-box .prompt-text {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--rust);
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .copy-btn {
+      margin-top: 6px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--warm-grey);
+      background: none;
+      border: 1px solid #3D2E29;
+      border-radius: 4px;
+      padding: 3px 8px;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .copy-btn:hover { color: var(--rust); border-color: var(--rust); }
+    .copy-btn.copied { color: #6abf69; border-color: #6abf69; }
   </style>
 </head>
 <body>
@@ -304,9 +347,10 @@
             <div style="font-family:'DM Sans',sans-serif; font-size:13px; color:var(--warm-grey); line-height:1.45;">
               In a new Cowork session, type the prompt below. Claude will build a <code>SKILL.md</code> file containing the complete HTML/CSS/JS template for building slide decks, plus layout rules and slide patterns. Save it to your skills folder.
             </div>
-            <div style="margin-top:8px; background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:10px 14px;">
-              <div style="font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:4px;">Prompt to type</div>
-              <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.5;">Create a skill called "html-slideshow" that teaches Claude how to build self-contained HTML slide decks. Include: a fixed 960×540px layout scaled by JS, full CSS variables for colours, navigation with dots and arrow keys, and at least 5 slide patterns (cover, two-column, grid cards, step slide, dark/code slide). Save the SKILL.md to my skills folder.</div>
+            <div class="prompt-box" style="margin-top:8px;">
+              <div class="prompt-label">Prompt to type</div>
+              <div class="prompt-text" id="p-slide6">Create a skill called "html-slideshow" that teaches Claude how to build self-contained HTML slide decks. Include: a fixed 960×540px layout scaled by JS, full CSS variables for colours, navigation with dots and arrow keys, and at least 5 slide patterns (cover, two-column, grid cards, step slide, dark/code slide). The skill should document all layout rules that caused debugging issues (e.g. never use flex:1 on content boxes, never put two layout classes on the same element). Save the SKILL.md to my skills folder.</div>
+              <button class="copy-btn" onclick="copyPrompt('p-slide6', this)">Copy</button>
             </div>
           </div>
         </div>
@@ -330,9 +374,20 @@
             <div style="font-family:'DM Sans',sans-serif; font-size:13px; color:var(--warm-grey); line-height:1.45;">
               Type the prompt below to have Claude write the SKILL.md for your reverse engineer skill. This is the core instruction file. Claude will create a folder called <code>reverse-engineer/</code> with a <code>SKILL.md</code> inside.
             </div>
-            <div style="margin-top:8px; background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:10px 14px;">
-              <div style="font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:4px;">Prompt to type</div>
-              <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.5;">Create a SKILL.md for a skill called "reverse-engineer". It should: (1) use mcp__session_info__list_sessions and mcp__session_info__read_transcript to read transcripts, (2) analyse what was built — extracting all skills, connectors, files, folders, and techniques used, (3) identify the minimum steps to recreate the build, (4) use my html-slideshow skill to produce a self-contained HTML slide deck covering: what was built, what you'll need, steps to recreate it, key prompts, and a call to action. Save to my skills folder as reverse-engineer/SKILL.md.</div>
+            <div class="prompt-box" style="margin-top:8px;">
+              <div class="prompt-label">Prompt to type</div>
+              <div class="prompt-text" id="p-slide7">Create a SKILL.md for a skill called "reverse-engineer". It should:
+
+1. Use mcp__session_info__list_sessions to show recent sessions if no ID is provided, and mcp__session_info__read_transcript (limit: 100) to read each transcript.
+
+2. Analyse what was built — extracting a full inventory: every skill triggered, every connector used, every folder connected, every file uploaded or created, and any key techniques (e.g. iterative refinement, subagents, screenshots uploaded for reference).
+
+3. Identify the minimum steps to recreate the build from scratch — stripping out dead ends and wrong turns from the transcript, leaving only what worked.
+
+4. Read the html-slideshow skill, then produce a self-contained HTML slide deck containing: (a) what was built and why it's useful, (b) full checklist of what the reader needs before starting, (c) step-by-step instructions with verbatim copy-paste prompts for each step, (d) key prompts labelled by what they achieved, (e) tips and watch-outs, (f) a closing call to action.
+
+Save to my skills folder as reverse-engineer/SKILL.md.</div>
+              <button class="copy-btn" onclick="copyPrompt('p-slide7', this)">Copy</button>
             </div>
           </div>
         </div>
@@ -400,9 +455,10 @@
             <div style="font-family:'DM Sans',sans-serif; font-size:13px; color:var(--warm-grey); line-height:1.45;">
               Type the prompt below. Claude will zip the <code>reverse-engineer/</code> folder into a <code>.skill</code> file and present it with a "Save skill" button. Click that button to install it.
             </div>
-            <div style="margin-top:8px; background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:10px 14px;">
-              <div style="font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:4px;">Prompt to type</div>
-              <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.5;">Package the reverse-engineer skill as a .skill file so I can install it.</div>
+            <div class="prompt-box" style="margin-top:8px;">
+              <div class="prompt-label">Prompt to type</div>
+              <div class="prompt-text" id="p-slide9">Package the reverse-engineer skill as a .skill file so I can install it.</div>
+              <button class="copy-btn" onclick="copyPrompt('p-slide9', this)">Copy</button>
             </div>
             <div style="background:var(--blush); border-radius:8px; padding:8px 12px; margin-top:6px;">
               <p style="font-size:11px; color:var(--warm-grey);">⚠ Do the same for the html-slideshow skill first if you haven't already — the reverse engineer skill depends on it being installed.</p>
@@ -429,14 +485,16 @@
             <div style="font-family:'DM Sans',sans-serif; font-size:13px; color:var(--warm-grey); line-height:1.45;">
               In a new Cowork session, either paste a session ID directly or ask Claude to list your recent sessions first. The skill will do the rest.
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
-              <div style="background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:10px 14px;">
-                <div style="font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:4px;">If you have a session ID</div>
-                <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.5;">Run the reverse engineering skill on session local_[your-id-here]</div>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+              <div class="prompt-box">
+                <div class="prompt-label">If you have a session ID</div>
+                <div class="prompt-text" id="p-step5a">Run the reverse engineering skill on session local_[paste-your-session-id-here]</div>
+                <button class="copy-btn" onclick="copyPrompt('p-step5a', this)">Copy</button>
               </div>
-              <div style="background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:10px 14px;">
-                <div style="font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:4px;">If you don't have a session ID</div>
-                <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.5;">Show me my recent sessions so I can pick one to reverse engineer</div>
+              <div class="prompt-box">
+                <div class="prompt-label">If you don't have a session ID</div>
+                <div class="prompt-text" id="p-step5b">Show me my recent sessions so I can pick one to reverse engineer</div>
+                <button class="copy-btn" onclick="copyPrompt('p-step5b', this)">Copy</button>
               </div>
             </div>
           </div>
@@ -453,24 +511,28 @@
       <div class="accent-bar" style="background:var(--rust);"></div>
       <div style="display:flex; flex-direction:column; gap:8px; overflow:hidden; flex:1; min-height:0;">
 
-        <div style="background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:8px 12px;">
-          <div style="font-size:8px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:3px;">List recent sessions</div>
-          <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.4;">Show me my recent sessions</div>
+        <div class="prompt-box">
+          <div class="prompt-label">List recent sessions</div>
+          <div class="prompt-text" id="p-list">Show me my recent sessions</div>
+          <button class="copy-btn" onclick="copyPrompt('p-list', this)">Copy</button>
         </div>
 
-        <div style="background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:8px 12px;">
-          <div style="font-size:8px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:3px;">Single session</div>
-          <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.4;">Reverse engineer session local_[id] and save the slide deck to my outputs folder</div>
+        <div class="prompt-box">
+          <div class="prompt-label">Single session</div>
+          <div class="prompt-text" id="p-single">Reverse engineer session local_[paste-your-session-id-here] and save the slide deck to my outputs folder</div>
+          <button class="copy-btn" onclick="copyPrompt('p-single', this)">Copy</button>
         </div>
 
-        <div style="background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:8px 12px;">
-          <div style="font-size:8px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:3px;">Multi-session project</div>
-          <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.4;">Reverse engineer these sessions: local_[id1], local_[id2], local_[id3] — they're all part of the same project</div>
+        <div class="prompt-box">
+          <div class="prompt-label">Multi-session project</div>
+          <div class="prompt-text" id="p-multi">Reverse engineer these sessions: local_[id1], local_[id2], local_[id3] — they are all part of the same project. Treat them as one continuous build and produce a single slide deck covering the whole thing.</div>
+          <button class="copy-btn" onclick="copyPrompt('p-multi', this)">Copy</button>
         </div>
 
-        <div style="background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:8px 12px;">
-          <div style="font-size:8px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:3px;">With audience context</div>
-          <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.4;">Reverse engineer session local_[id] — the deck is for colleagues who know Cowork basics but have never built anything like this</div>
+        <div class="prompt-box">
+          <div class="prompt-label">With audience context</div>
+          <div class="prompt-text" id="p-audience">Reverse engineer session local_[paste-your-session-id-here] — the deck is for colleagues who know Cowork basics but have never built anything like this. Make sure every prompt shown is verbatim and copy-paste ready, not paraphrased.</div>
+          <button class="copy-btn" onclick="copyPrompt('p-audience', this)">Copy</button>
         </div>
 
       </div>
@@ -708,6 +770,15 @@
   void s1.offsetWidth;
   s1.classList.add('entering');
   setTimeout(() => s1.classList.remove('entering'), 700);
+
+  function copyPrompt(id, btn) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
 </script>
 
 </body>
