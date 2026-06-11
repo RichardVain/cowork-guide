@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Build a Reverse Engineer Skill</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=DM+Sans:wght@400;500;700&family=DM+Mono&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --terracotta: #C0603A;
+      --rust:       #E8927A;
+      --blush:      #F5E0D8;
+      --sand:       #F7F0E8;
+      --charcoal:   #2C2420;
+      --warm-grey:  #8C7B74;
+      --stone:      #D6C9C3;
+      --white:      #FFFFFF;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #1A1210;
+      color: var(--charcoal);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #deck {
+      position: relative;
+      width: 960px;
+      height: 540px;
+      flex-shrink: 0;
+      transform-origin: top center;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0s;
+    }
+    .slide.active   { opacity: 1; pointer-events: auto; }
+    .slide.entering { animation: fadeSlide 0.55s cubic-bezier(0.4,0,0.2,1) forwards; }
+    @keyframes fadeSlide {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .slide-inner {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 32px 52px;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .eyebrow {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--terracotta);
+      flex-shrink: 0;
+    }
+    h1 { font-family:'Lora',serif; font-weight:700; font-size:38px; line-height:1.12; color:var(--charcoal); flex-shrink:0; }
+    h2 { font-family:'Lora',serif; font-weight:700; font-size:24px; line-height:1.15; color:var(--charcoal); flex-shrink:0; }
+    p, li { font-family:'DM Sans',sans-serif; font-size:13px; line-height:1.5; color:var(--charcoal); }
+    .accent-bar { width:40px; height:3px; background:var(--terracotta); border-radius:2px; flex-shrink:0; }
+
+    #nav { display:flex; gap:12px; margin-top:8px; align-items:center; }
+    .nav-btn {
+      background:none; border:1.5px solid #5C4A44; border-radius:6px;
+      padding:5px 18px; font-family:'DM Sans',sans-serif; font-size:12px;
+      color:#D6C9C3; cursor:pointer; transition:border-color 0.2s, color 0.2s;
+    }
+    .nav-btn:hover    { border-color:var(--rust); color:var(--rust); }
+    .nav-btn:disabled { opacity:0.3; cursor:default; }
+    #dots { display:flex; gap:8px; align-items:center; }
+    .dot  { width:7px; height:7px; border-radius:50%; background:#5C4A44; transition:background 0.3s,transform 0.3s; cursor:pointer; }
+    .dot.active { background:var(--terracotta); transform:scale(1.35); }
+    #counter {
+      margin-top:8px; font-family:'DM Sans',sans-serif; font-size:11px;
+      color:#5C4A44; letter-spacing:0.1em; text-align:center;
+    }
+    #keyboard-hint {
+      margin-top:6px; font-family:'DM Sans',sans-serif; font-size:10px;
+      color:#5a4540; letter-spacing:0.05em; text-align:center;
+    }
+
+    code {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--rust);
+      background: rgba(0,0,0,0.08);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="deck">
+
+  <!-- SLIDE 1: Cover -->
+  <div class="slide active" id="slide-1" style="background:var(--charcoal);">
+    <div style="background:var(--terracotta); height:150px; width:100%; flex-shrink:0; display:flex; align-items:center; padding:0 52px;">
+      <div style="font-family:'Lora',serif; font-size:52px; color:rgba(255,255,255,0.15); font-weight:700; line-height:1;">⟳</div>
+    </div>
+    <div style="flex:1; display:flex; flex-direction:column; justify-content:center; padding:28px 52px; gap:14px;">
+      <span class="eyebrow" style="color:var(--rust);">Cowork · Skill Building</span>
+      <h1 style="color:var(--sand);">Build a Reverse<br>Engineer Skill</h1>
+      <p style="color:var(--blush); font-size:13px;">A step-by-step guide to creating a skill that reads session transcripts and produces a reusable how-to slide deck — for any Cowork user.</p>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: What it does -->
+  <div class="slide" id="slide-2" style="background:var(--sand);">
+    <div style="flex:1; display:flex;">
+      <div style="width:5px; background:var(--terracotta); flex-shrink:0;"></div>
+      <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; overflow:hidden;">
+        <div style="display:flex; flex-direction:column; justify-content:center;
+                    padding:28px 28px 28px 38px; gap:12px; border-right:1px solid var(--stone); overflow:hidden;">
+          <span class="eyebrow">What you're building</span>
+          <h2>The Reverse Engineer Skill</h2>
+          <div class="accent-bar"></div>
+          <p>A Cowork skill that reads one or more session transcripts and produces a polished HTML slide deck explaining what was built and how to recreate it from scratch.</p>
+        </div>
+        <div style="display:flex; flex-direction:column; justify-content:center;
+                    padding:28px 38px 28px 28px; gap:14px; background:var(--white); overflow:hidden;">
+          <p style="font-weight:700; font-size:13px; color:var(--terracotta);">Why it matters</p>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="color:var(--terracotta); font-size:14px; flex-shrink:0;">→</span>
+              <p>Turns private session knowledge into shareable tutorials</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="color:var(--terracotta); font-size:14px; flex-shrink:0;">→</span>
+              <p>Anyone on your team can recreate any build — without asking you</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="color:var(--terracotta); font-size:14px; flex-shrink:0;">→</span>
+              <p>Works across single sessions and multi-session projects</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="color:var(--terracotta); font-size:14px; flex-shrink:0;">→</span>
+              <p>Output is a self-contained HTML file — no server, no dependencies</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: What you'll need -->
+  <div class="slide" id="slide-3" style="background:var(--white);">
+    <div class="slide-inner" style="padding:22px 38px; gap:8px; justify-content:flex-start;">
+      <span class="eyebrow">Before you start</span>
+      <h2 style="font-size:20px;">What you'll need</h2>
+      <div class="accent-bar"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr;
+                  gap:6px; flex:1; min-height:0; overflow:hidden; margin-top:4px;">
+
+        <div style="background:var(--blush); border-left:3px solid var(--terracotta);
+                    border-radius:0 8px 8px 0; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:15px; color:var(--charcoal);">Cowork access</div>
+          <div style="font-size:13px; color:var(--warm-grey); line-height:1.4;">You need an active Cowork session. The skill will live in your Cowork skills folder.</div>
+        </div>
+
+        <div style="background:var(--blush); border-left:3px solid var(--terracotta);
+                    border-radius:0 8px 8px 0; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:15px; color:var(--charcoal);">A slideshow skill</div>
+          <div style="font-size:13px; color:var(--warm-grey); line-height:1.4;">The reverse engineer skill delegates HTML output to a slideshow skill. You'll build a simple one as part of this guide.</div>
+        </div>
+
+        <div style="background:var(--blush); border-left:3px solid var(--terracotta);
+                    border-radius:0 8px 8px 0; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:15px; color:var(--charcoal);">Session IDs to test with</div>
+          <div style="font-size:13px; color:var(--warm-grey); line-height:1.4;">Have 1–2 session IDs ready to run your first test. You'll learn how to find them on the next slide.</div>
+        </div>
+
+        <div style="background:var(--blush); border-left:3px solid var(--terracotta);
+                    border-radius:0 8px 8px 0; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:15px; color:var(--charcoal);">A text editor (optional)</div>
+          <div style="font-size:13px; color:var(--warm-grey); line-height:1.4;">Helpful for reviewing the SKILL.md files you create. VS Code or any plain-text editor works fine.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: How session IDs work -->
+  <div class="slide" id="slide-4" style="background:var(--sand);">
+    <div style="flex:1; display:flex;">
+      <div style="width:5px; background:var(--terracotta); flex-shrink:0;"></div>
+      <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; overflow:hidden;">
+        <div style="display:flex; flex-direction:column; justify-content:center;
+                    padding:28px 28px 28px 38px; gap:12px; border-right:1px solid var(--stone); overflow:hidden;">
+          <span class="eyebrow">Foundation concept</span>
+          <h2>Session IDs & Transcripts</h2>
+          <div class="accent-bar"></div>
+          <p>Every Cowork conversation is stored as a "session". Each has a unique ID and a full transcript of every message exchanged.</p>
+          <p style="margin-top:4px;">The reverse engineer skill reads these transcripts to extract what was built, which tools were used, and what prompts drove the work.</p>
+        </div>
+        <div style="display:flex; flex-direction:column; justify-content:center;
+                    padding:28px 38px 28px 28px; gap:12px; background:var(--white); overflow:hidden;">
+          <p style="font-weight:700; font-size:13px; color:var(--terracotta);">Finding session IDs</p>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="font-family:'Lora',serif; font-weight:700; color:var(--terracotta); font-size:16px; flex-shrink:0;">1.</span>
+              <p>Ask Claude: <em>"Show me my recent sessions"</em> — it will list titles and IDs</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="font-family:'Lora',serif; font-weight:700; color:var(--terracotta); font-size:16px; flex-shrink:0;">2.</span>
+              <p>IDs look like: <code>local_a54f528a-b854-4fe4...</code></p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="font-family:'Lora',serif; font-weight:700; color:var(--terracotta); font-size:16px; flex-shrink:0;">3.</span>
+              <p>For multi-session projects, collect all relevant IDs before running the skill</p>
+            </div>
+          </div>
+          <div style="background:var(--blush); border-radius:8px; padding:10px 14px; margin-top:4px;">
+            <p style="font-size:11px; color:var(--warm-grey);">The skill uses <code>mcp__session_info__list_sessions</code> and <code>mcp__session_info__read_transcript</code> — these are built-in Cowork tools, no extra setup needed.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: Overview of what you're creating -->
+  <div class="slide" id="slide-5" style="background:var(--white);">
+    <div class="slide-inner" style="padding:22px 38px; gap:8px; justify-content:flex-start;">
+      <span class="eyebrow">Overview</span>
+      <h2 style="font-size:20px;">Two skills, working together</h2>
+      <div class="accent-bar"></div>
+      <p style="font-size:12px; color:var(--warm-grey);">The reverse engineer skill delegates the visual output to a separate slideshow skill. You need both.</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr;
+                  gap:6px; flex:1; min-height:0; overflow:hidden; margin-top:4px;">
+
+        <div style="background:var(--blush); border-left:3px solid var(--terracotta);
+                    border-radius:0 8px 8px 0; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:15px; color:var(--charcoal);">1. The Slideshow Skill</div>
+          <div style="font-size:13px; color:var(--warm-grey); line-height:1.4;">Contains the CSS/JS template, layout rules, and slide patterns for building HTML decks. The reverse engineer skill reads this to know how to build the output.</div>
+        </div>
+
+        <div style="background:var(--blush); border-left:3px solid var(--terracotta);
+                    border-radius:0 8px 8px 0; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:15px; color:var(--charcoal);">2. The Reverse Engineer Skill</div>
+          <div style="font-size:13px; color:var(--warm-grey); line-height:1.4;">Reads session transcripts, extracts what was built, and uses the slideshow skill to produce a how-to deck. This is the main skill you're creating.</div>
+        </div>
+
+        <div style="background:var(--sand); border:1px solid var(--stone);
+                    border-radius:8px; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:14px; color:var(--warm-grey);">Skill format</div>
+          <div style="font-size:12px; color:var(--warm-grey); line-height:1.4;">Each skill is a folder with a <code>SKILL.md</code> file inside. You zip it into a <code>.skill</code> file to install it.</div>
+        </div>
+
+        <div style="background:var(--sand); border:1px solid var(--stone);
+                    border-radius:8px; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:14px; color:var(--warm-grey);">Where skills live</div>
+          <div style="font-size:12px; color:var(--warm-grey); line-height:1.4;">Once installed, skills appear in Claude's available skills list and are read automatically when relevant prompts are typed.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: Step 1 — Create the slideshow skill -->
+  <div class="slide" id="slide-6" style="background:var(--sand);">
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+      <div style="width:88%; display:flex; flex-direction:column; gap:16px; padding:24px 0;">
+        <span class="eyebrow">Building the skill · Step 1 of 5</span>
+        <div style="background:var(--white); border:1px solid var(--stone); border-radius:12px;
+                    padding:24px 36px; display:flex; gap:20px; align-items:flex-start; flex:0 0 auto;">
+          <div style="font-family:'Lora',serif; font-weight:700; font-size:56px;
+                      color:var(--terracotta); line-height:1; flex-shrink:0; width:56px; text-align:center;">1</div>
+          <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
+            <div style="font-family:'Lora',serif; font-weight:700; font-size:22px; color:var(--charcoal); line-height:1.2;">
+              Create your slideshow skill
+            </div>
+            <div style="font-family:'DM Sans',sans-serif; font-size:13px; color:var(--warm-grey); line-height:1.45;">
+              In a new Cowork session, type the prompt below. Claude will build a <code>SKILL.md</code> file containing the complete HTML/CSS/JS template for building slide decks, plus layout rules and slide patterns. Save it to your skills folder.
+            </div>
+            <div style="margin-top:8px; background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:10px 14px;">
+              <div style="font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:4px;">Prompt to type</div>
+              <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.5;">Create a skill called "html-slideshow" that teaches Claude how to build self-contained HTML slide decks. Include: a fixed 960×540px layout scaled by JS, full CSS variables for colours, navigation with dots and arrow keys, and at least 5 slide patterns (cover, two-column, grid cards, step slide, dark/code slide). Save the SKILL.md to my skills folder.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: Step 2 — Write the SKILL.md (part 1: frontmatter + purpose) -->
+  <div class="slide" id="slide-7" style="background:var(--sand);">
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+      <div style="width:88%; display:flex; flex-direction:column; gap:16px; padding:24px 0;">
+        <span class="eyebrow">Building the skill · Step 2 of 5</span>
+        <div style="background:var(--white); border:1px solid var(--stone); border-radius:12px;
+                    padding:24px 36px; display:flex; gap:20px; align-items:flex-start; flex:0 0 auto;">
+          <div style="font-family:'Lora',serif; font-weight:700; font-size:56px;
+                      color:var(--terracotta); line-height:1; flex-shrink:0; width:56px; text-align:center;">2</div>
+          <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
+            <div style="font-family:'Lora',serif; font-weight:700; font-size:22px; color:var(--charcoal); line-height:1.2;">
+              Create the reverse-engineer SKILL.md
+            </div>
+            <div style="font-family:'DM Sans',sans-serif; font-size:13px; color:var(--warm-grey); line-height:1.45;">
+              Type the prompt below to have Claude write the SKILL.md for your reverse engineer skill. This is the core instruction file. Claude will create a folder called <code>reverse-engineer/</code> with a <code>SKILL.md</code> inside.
+            </div>
+            <div style="margin-top:8px; background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:10px 14px;">
+              <div style="font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:4px;">Prompt to type</div>
+              <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.5;">Create a SKILL.md for a skill called "reverse-engineer". It should: (1) use mcp__session_info__list_sessions and mcp__session_info__read_transcript to read transcripts, (2) analyse what was built — extracting all skills, connectors, files, folders, and techniques used, (3) identify the minimum steps to recreate the build, (4) use my html-slideshow skill to produce a self-contained HTML slide deck covering: what was built, what you'll need, steps to recreate it, key prompts, and a call to action. Save to my skills folder as reverse-engineer/SKILL.md.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: Step 3 — Refine the SKILL.md -->
+  <div class="slide" id="slide-8" style="background:var(--sand);">
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+      <div style="width:88%; display:flex; flex-direction:column; gap:16px; padding:24px 0;">
+        <span class="eyebrow">Building the skill · Step 3 of 5</span>
+        <div style="background:var(--white); border:1px solid var(--stone); border-radius:12px;
+                    padding:24px 36px; display:flex; gap:20px; align-items:flex-start; flex:0 0 auto;">
+          <div style="font-family:'Lora',serif; font-weight:700; font-size:56px;
+                      color:var(--terracotta); line-height:1; flex-shrink:0; width:56px; text-align:center;">3</div>
+          <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
+            <div style="font-family:'Lora',serif; font-weight:700; font-size:22px; color:var(--charcoal); line-height:1.2;">
+              Review and refine
+            </div>
+            <div style="font-family:'DM Sans',sans-serif; font-size:13px; color:var(--warm-grey); line-height:1.45;">
+              Read the generated <code>SKILL.md</code> and check these five things. If anything is missing or wrong, ask Claude to fix it directly.
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <span style="color:var(--terracotta); font-size:12px; flex-shrink:0; margin-top:1px;">✓</span>
+                <p style="font-size:12px;"><strong>Frontmatter description</strong> — Does it clearly describe when to trigger the skill? Include phrases like "reverse engineer this session", "how was this built?", "show me how to recreate X".</p>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <span style="color:var(--terracotta); font-size:12px; flex-shrink:0; margin-top:1px;">✓</span>
+                <p style="font-size:12px;"><strong>Inventory checklist</strong> — Does it explicitly extract skills, connectors, folder access, uploaded files, created files, and techniques used?</p>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <span style="color:var(--terracotta); font-size:12px; flex-shrink:0; margin-top:1px;">✓</span>
+                <p style="font-size:12px;"><strong>"Straightest path" instruction</strong> — Does it say to strip out dead ends and only show the steps that actually worked?</p>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <span style="color:var(--terracotta); font-size:12px; flex-shrink:0; margin-top:1px;">✓</span>
+                <p style="font-size:12px;"><strong>Slideshow skill reference</strong> — Does it tell Claude to read the html-slideshow skill before building any HTML?</p>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <span style="color:var(--terracotta); font-size:12px; flex-shrink:0; margin-top:1px;">✓</span>
+                <p style="font-size:12px;"><strong>Output location</strong> — Does it specify where to save the finished HTML file?</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: Step 4 — Package and install -->
+  <div class="slide" id="slide-9" style="background:var(--sand);">
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+      <div style="width:88%; display:flex; flex-direction:column; gap:16px; padding:24px 0;">
+        <span class="eyebrow">Building the skill · Step 4 of 5</span>
+        <div style="background:var(--white); border:1px solid var(--stone); border-radius:12px;
+                    padding:24px 36px; display:flex; gap:20px; align-items:flex-start; flex:0 0 auto;">
+          <div style="font-family:'Lora',serif; font-weight:700; font-size:56px;
+                      color:var(--terracotta); line-height:1; flex-shrink:0; width:56px; text-align:center;">4</div>
+          <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
+            <div style="font-family:'Lora',serif; font-weight:700; font-size:22px; color:var(--charcoal); line-height:1.2;">
+              Package and install the skill
+            </div>
+            <div style="font-family:'DM Sans',sans-serif; font-size:13px; color:var(--warm-grey); line-height:1.45;">
+              Type the prompt below. Claude will zip the <code>reverse-engineer/</code> folder into a <code>.skill</code> file and present it with a "Save skill" button. Click that button to install it.
+            </div>
+            <div style="margin-top:8px; background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:10px 14px;">
+              <div style="font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:4px;">Prompt to type</div>
+              <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.5;">Package the reverse-engineer skill as a .skill file so I can install it.</div>
+            </div>
+            <div style="background:var(--blush); border-radius:8px; padding:8px 12px; margin-top:6px;">
+              <p style="font-size:11px; color:var(--warm-grey);">⚠ Do the same for the html-slideshow skill first if you haven't already — the reverse engineer skill depends on it being installed.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: Step 5 — Run your first test -->
+  <div class="slide" id="slide-10" style="background:var(--sand);">
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+      <div style="width:88%; display:flex; flex-direction:column; gap:16px; padding:24px 0;">
+        <span class="eyebrow">Building the skill · Step 5 of 5</span>
+        <div style="background:var(--white); border:1px solid var(--stone); border-radius:12px;
+                    padding:24px 36px; display:flex; gap:20px; align-items:flex-start; flex:0 0 auto;">
+          <div style="font-family:'Lora',serif; font-weight:700; font-size:56px;
+                      color:var(--terracotta); line-height:1; flex-shrink:0; width:56px; text-align:center;">5</div>
+          <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
+            <div style="font-family:'Lora',serif; font-weight:700; font-size:22px; color:var(--charcoal); line-height:1.2;">
+              Run your first reverse engineer
+            </div>
+            <div style="font-family:'DM Sans',sans-serif; font-size:13px; color:var(--warm-grey); line-height:1.45;">
+              In a new Cowork session, either paste a session ID directly or ask Claude to list your recent sessions first. The skill will do the rest.
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+              <div style="background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:10px 14px;">
+                <div style="font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:4px;">If you have a session ID</div>
+                <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.5;">Run the reverse engineering skill on session local_[your-id-here]</div>
+              </div>
+              <div style="background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:10px 14px;">
+                <div style="font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:4px;">If you don't have a session ID</div>
+                <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.5;">Show me my recent sessions so I can pick one to reverse engineer</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 11: Key prompts -->
+  <div class="slide" id="slide-11" style="background:var(--charcoal);">
+    <div class="slide-inner" style="padding:24px 44px; gap:10px; justify-content:flex-start;">
+      <span class="eyebrow" style="color:var(--rust);">Reference</span>
+      <h2 style="color:var(--sand); font-size:22px;">Key prompts — copy and adapt</h2>
+      <div class="accent-bar" style="background:var(--rust);"></div>
+      <div style="display:flex; flex-direction:column; gap:8px; overflow:hidden; flex:1; min-height:0;">
+
+        <div style="background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:8px 12px;">
+          <div style="font-size:8px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:3px;">List recent sessions</div>
+          <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.4;">Show me my recent sessions</div>
+        </div>
+
+        <div style="background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:8px 12px;">
+          <div style="font-size:8px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:3px;">Single session</div>
+          <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.4;">Reverse engineer session local_[id] and save the slide deck to my outputs folder</div>
+        </div>
+
+        <div style="background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:8px 12px;">
+          <div style="font-size:8px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:3px;">Multi-session project</div>
+          <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.4;">Reverse engineer these sessions: local_[id1], local_[id2], local_[id3] — they're all part of the same project</div>
+        </div>
+
+        <div style="background:#1A1210; border:1px solid #3D2E29; border-radius:8px; padding:8px 12px;">
+          <div style="font-size:8px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-grey); margin-bottom:3px;">With audience context</div>
+          <div style="font-family:'DM Mono',monospace; font-size:11px; color:var(--rust); line-height:1.4;">Reverse engineer session local_[id] — the deck is for colleagues who know Cowork basics but have never built anything like this</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 12: What the output should contain -->
+  <div class="slide" id="slide-12" style="background:var(--white);">
+    <div class="slide-inner" style="padding:22px 38px; gap:8px; justify-content:flex-start;">
+      <span class="eyebrow">Quality check</span>
+      <h2 style="font-size:20px;">What a good output deck contains</h2>
+      <div class="accent-bar"></div>
+      <p style="font-size:12px; color:var(--warm-grey);">The finished HTML slide deck should pass this test: could someone who's never built this follow the slides and recreate it in one session?</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr;
+                  gap:6px; flex:1; min-height:0; overflow:hidden; margin-top:4px;">
+
+        <div style="background:var(--blush); border-left:3px solid var(--terracotta);
+                    border-radius:0 8px 8px 0; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:15px; color:var(--charcoal);">Full inventory slide</div>
+          <div style="font-size:13px; color:var(--warm-grey); line-height:1.4;">Every skill, connector, folder, uploaded file, and output file listed — nothing assumed or left implicit.</div>
+        </div>
+
+        <div style="background:var(--blush); border-left:3px solid var(--terracotta);
+                    border-radius:0 8px 8px 0; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:15px; color:var(--charcoal);">Step-by-step slides</div>
+          <div style="font-size:13px; color:var(--warm-grey); line-height:1.4;">Each step numbered, titled, with a plain-English instruction and a clean reusable prompt — not a verbatim transcript copy.</div>
+        </div>
+
+        <div style="background:var(--blush); border-left:3px solid var(--terracotta);
+                    border-radius:0 8px 8px 0; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:15px; color:var(--charcoal);">Dead ends stripped out</div>
+          <div style="font-size:13px; color:var(--warm-grey); line-height:1.4;">Only the path that worked. The original session may have had wrong turns — the deck should show the shortest route, not a transcript replay.</div>
+        </div>
+
+        <div style="background:var(--blush); border-left:3px solid var(--terracotta);
+                    border-radius:0 8px 8px 0; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:15px; color:var(--charcoal);">Tips & watch-outs</div>
+          <div style="font-size:13px; color:var(--warm-grey); line-height:1.4;">Gotchas from the original build surfaced explicitly — so the next person doesn't hit the same wall.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 13: Tips and watch-outs -->
+  <div class="slide" id="slide-13" style="background:var(--sand);">
+    <div style="flex:1; display:flex;">
+      <div style="width:5px; background:var(--terracotta); flex-shrink:0;"></div>
+      <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; overflow:hidden;">
+        <div style="display:flex; flex-direction:column; justify-content:center;
+                    padding:28px 28px 28px 38px; gap:12px; border-right:1px solid var(--stone); overflow:hidden;">
+          <span class="eyebrow">Tips</span>
+          <h2>Getting the best results</h2>
+          <div class="accent-bar"></div>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="color:var(--terracotta); font-size:14px; flex-shrink:0;">→</span>
+              <p style="font-size:12px;">Run the skill <strong>after</strong> the work is done — transcripts can't capture sessions that haven't happened yet</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="color:var(--terracotta); font-size:14px; flex-shrink:0;">→</span>
+              <p style="font-size:12px;">Give Claude all session IDs upfront for multi-session projects — it reads them in parallel</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="color:var(--terracotta); font-size:14px; flex-shrink:0;">→</span>
+              <p style="font-size:12px;">Tell Claude who the audience is — "colleagues who know Cowork basics" vs. "complete beginners" changes the tone significantly</p>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; justify-content:center;
+                    padding:28px 38px 28px 28px; gap:12px; background:var(--white); overflow:hidden;">
+          <p style="font-weight:700; font-size:13px; color:var(--terracotta);">Watch-outs</p>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="color:#C0603A; font-size:12px; flex-shrink:0; margin-top:1px;">⚠</span>
+              <p style="font-size:12px;">If the output HTML doesn't look right, check that your html-slideshow skill is installed correctly — the reverse engineer skill reads it to know how to build slides</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="color:#C0603A; font-size:12px; flex-shrink:0; margin-top:1px;">⚠</span>
+              <p style="font-size:12px;">Long sessions (50+ messages) may need two transcript reads — the skill handles this automatically with <code>limit</code> and <code>offset</code></p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="color:#C0603A; font-size:12px; flex-shrink:0; margin-top:1px;">⚠</span>
+              <p style="font-size:12px;">The output deck describes the build — it doesn't recreate it. The reader still needs to run the steps themselves</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 14: Sharing the skill -->
+  <div class="slide" id="slide-14" style="background:var(--white);">
+    <div class="slide-inner" style="padding:22px 38px; gap:8px; justify-content:flex-start;">
+      <span class="eyebrow">Going further</span>
+      <h2 style="font-size:20px;">Sharing the skill with others</h2>
+      <div class="accent-bar"></div>
+      <p style="font-size:12px; color:var(--warm-grey);">Once your skill is working, you can share it with your whole team — each person installs it into their own Cowork.</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto auto;
+                  gap:6px; flex:1; min-height:0; overflow:hidden; margin-top:4px;">
+
+        <div style="background:var(--blush); border-left:3px solid var(--terracotta);
+                    border-radius:0 8px 8px 0; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:15px; color:var(--charcoal);">Step 1 — Find the .skill file</div>
+          <div style="font-size:13px; color:var(--warm-grey); line-height:1.4;">After packaging, Claude presents a card with a "Save skill" button. The file is also saved to your Cowork folder — look for <code>reverse-engineer.skill</code>.</div>
+        </div>
+
+        <div style="background:var(--blush); border-left:3px solid var(--terracotta);
+                    border-radius:0 8px 8px 0; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:15px; color:var(--charcoal);">Step 2 — Send it</div>
+          <div style="font-size:13px; color:var(--warm-grey); line-height:1.4;">Attach the <code>.skill</code> file to a message (Slack, email, etc.) and send to your colleague. The file is small — typically under 10KB.</div>
+        </div>
+
+        <div style="background:var(--blush); border-left:3px solid var(--terracotta);
+                    border-radius:0 8px 8px 0; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:15px; color:var(--charcoal);">Step 3 — Colleague installs</div>
+          <div style="font-size:13px; color:var(--warm-grey); line-height:1.4;">They open the file in their Cowork session — a "Save skill" button appears. One click installs it.</div>
+        </div>
+
+        <div style="background:var(--blush); border-left:3px solid var(--terracotta);
+                    border-radius:0 8px 8px 0; padding:10px 16px;
+                    display:flex; flex-direction:column; justify-content:center; gap:5px;">
+          <div style="font-weight:700; font-size:15px; color:var(--charcoal);">Remember: share both</div>
+          <div style="font-size:13px; color:var(--warm-grey); line-height:1.4;">Your colleague also needs the <code>html-slideshow.skill</code> file. Package and send both together — the reverse engineer skill depends on it.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 15: Try it yourself -->
+  <div class="slide" id="slide-15" style="background:var(--sand); display:flex; flex-direction:column;">
+    <div class="slide-inner" style="justify-content:center;">
+      <span class="eyebrow">You're ready</span>
+      <h2>Try it yourself</h2>
+      <div class="accent-bar"></div>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:4px;">
+        <div style="display:flex; align-items:baseline; gap:12px; font-size:14px; color:var(--charcoal); line-height:1.45;">
+          <span style="width:6px; height:6px; min-width:6px; background:var(--terracotta);
+                       border-radius:50%; flex-shrink:0; display:inline-block; margin-top:0.4em;"></span>
+          Open a new Cowork session and ask Claude to create your <code>html-slideshow</code> skill first
+        </div>
+        <div style="display:flex; align-items:baseline; gap:12px; font-size:14px; color:var(--charcoal); line-height:1.45;">
+          <span style="width:6px; height:6px; min-width:6px; background:var(--terracotta);
+                       border-radius:50%; flex-shrink:0; display:inline-block; margin-top:0.4em;"></span>
+          Then ask Claude to create your <code>reverse-engineer</code> skill using the prompt on slide 7
+        </div>
+        <div style="display:flex; align-items:baseline; gap:12px; font-size:14px; color:var(--charcoal); line-height:1.45;">
+          <span style="width:6px; height:6px; min-width:6px; background:var(--terracotta);
+                       border-radius:50%; flex-shrink:0; display:inline-block; margin-top:0.4em;"></span>
+          Package both as <code>.skill</code> files and install them
+        </div>
+        <div style="display:flex; align-items:baseline; gap:12px; font-size:14px; color:var(--charcoal); line-height:1.45;">
+          <span style="width:6px; height:6px; min-width:6px; background:var(--terracotta);
+                       border-radius:50%; flex-shrink:0; display:inline-block; margin-top:0.4em;"></span>
+          In a new session, type: <em>"Show me my recent sessions so I can pick one to reverse engineer"</em>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:12px; font-size:14px; color:var(--charcoal); line-height:1.45;">
+          <span style="width:6px; height:6px; min-width:6px; background:var(--terracotta);
+                       border-radius:50%; flex-shrink:0; display:inline-block; margin-top:0.4em;"></span>
+          Open the output HTML in your browser — if a colleague can follow it and recreate the build, you're done
+        </div>
+      </div>
+    </div>
+    <div style="height:8px; background:var(--terracotta); flex-shrink:0;"></div>
+  </div>
+
+</div><!-- end #deck -->
+
+<div id="nav">
+  <button class="nav-btn" id="btn-prev">← Prev</button>
+  <div id="dots"></div>
+  <button class="nav-btn" id="btn-next">Next →</button>
+</div>
+<div id="counter"></div>
+<div id="keyboard-hint">← → arrow keys to navigate</div>
+
+<script>
+  const SLIDE_W = 960, SLIDE_H = 540;
+  const deck = document.getElementById('deck');
+
+  function scaleDeck() {
+    const availH = window.innerHeight - 80;
+    const scale  = Math.min(window.innerWidth / SLIDE_W, availH / SLIDE_H, 1.5);
+    deck.style.transform = `scale(${scale})`;
+    deck.style.marginBottom = `${(SLIDE_H * scale - SLIDE_H)}px`;
+  }
+  scaleDeck();
+  window.addEventListener('resize', scaleDeck);
+
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total  = slides.length;
+  let current  = 0;
+
+  const dotsEl = document.getElementById('dots');
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => goTo(i));
+    dotsEl.appendChild(d);
+  });
+
+  function updateDots()    { document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('active', i===current)); }
+  function updateCounter() { document.getElementById('counter').textContent = (current+1)+' / '+total; }
+  function updateNav()     { document.getElementById('btn-prev').disabled = current===0; document.getElementById('btn-next').disabled = current===total-1; }
+
+  function goTo(index) {
+    if (index < 0 || index >= total) return;
+    slides[current].classList.remove('active','entering');
+    current = index;
+    const s = slides[current];
+    s.classList.add('active');
+    void s.offsetWidth;
+    s.classList.add('entering');
+    setTimeout(() => s.classList.remove('entering'), 700);
+    updateDots(); updateCounter(); updateNav();
+  }
+
+  document.getElementById('btn-next').addEventListener('click', () => goTo(current+1));
+  document.getElementById('btn-prev').addEventListener('click', () => goTo(current-1));
+  document.addEventListener('keydown', e => {
+    if (e.key==='ArrowRight'||e.key==='ArrowDown') goTo(current+1);
+    if (e.key==='ArrowLeft' ||e.key==='ArrowUp')   goTo(current-1);
+  });
+
+  updateDots(); updateCounter(); updateNav();
+  const s1 = slides[0];
+  void s1.offsetWidth;
+  s1.classList.add('entering');
+  setTimeout(() => s1.classList.remove('entering'), 700);
+</script>
+
+</body>
+</html>
